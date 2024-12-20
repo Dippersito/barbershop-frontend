@@ -125,8 +125,7 @@ const Reports = () => {
         throw new Error('No hay token de autenticación');
       }
   
-      // Hacer la solicitud usando axios (api) en lugar de fetch
-      const response = await api.get(`/haircuts/report/`, {
+      const response = await api.get('/haircuts/report/', {
         params: {
           startDate: dateRange.startDate,
           endDate: dateRange.endDate
@@ -134,17 +133,17 @@ const Reports = () => {
         responseType: 'text',
         headers: {
           'Accept': 'text/html',
+          'Authorization': `Bearer ${token}`
         }
       });
   
-      // Crear nueva ventana y escribir el HTML
-      const reportWindow = window.open('', '_blank');
-      reportWindow.document.write(response.data);
-      reportWindow.document.close();
-      
+      if (response.data) {
+        const reportWindow = window.open('', '_blank');
+        reportWindow.document.write(response.data);
+        reportWindow.document.close();
+      }
     } catch (error) {
       console.error('Error completo:', error);
-      console.error('Response:', error.response);
       Swal.fire({
         icon: 'error',
         title: 'Error',
