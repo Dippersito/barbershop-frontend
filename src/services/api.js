@@ -16,9 +16,16 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    const { machineId } = getLicenseData();
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    if (machineId) {
+      config.headers['X-Machine-ID'] = machineId;
+    }
+    
     return config;
   },
   (error) => {

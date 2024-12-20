@@ -38,7 +38,16 @@ const Login = () => {
 
     try {
       console.log('Intentando login con:', formData);
-      const response = await api.post('/auth/login/', formData);
+      
+      // Obtener el machine_id
+      const { machineId } = getLicenseData();
+      
+      const response = await api.post('/auth/login/', formData, {
+        headers: {
+          'X-Machine-ID': machineId
+        }
+      });
+
       console.log('Respuesta del servidor:', response.data);
       
       const { access, refresh } = response.data;
@@ -53,7 +62,7 @@ const Login = () => {
       // Redirigir al dashboard
       navigate('/dashboard');
     } catch (error) {
-      console.error('Error de inicio de sesión:', error);
+      console.error('Error completo:', error);
       
       if (error.response?.status === 403) {
         // Error de licencia
@@ -80,7 +89,7 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-};
+  };
 
   return (
     <Container component="main" maxWidth="xs">
