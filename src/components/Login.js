@@ -37,29 +37,39 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/login/', formData);
-      const { access, refresh } = response.data;
+        console.log('Intentando login con:', formData); // Debug
+        const response = await api.post('/auth/login/', formData);
+        console.log('Respuesta del servidor:', response.data); // Debug
+        
+        const { access, refresh } = response.data;
 
-      // Guardar tokens
-      localStorage.setItem('token', access);
-      localStorage.setItem('refreshToken', refresh);
-
-      // Configurar el token en axios
-      api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
-
-      // Redirigir al dashboard
-      navigate('/dashboard');
+        if (access && refresh) {
+            localStorage.setItem('token', access);
+            localStorage.setItem('refreshToken', refresh);
+            api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+            navigate('/dashboard');
+        } else {
+            throw new Error('No se recibieron los tokens necesarios');
+        }
     } catch (error) {
-      console.error('Error de inicio de sesión:', error);
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Error de inicio de sesión',
-        text: error.response?.data?.detail || 'Credenciales incorrectas',
-        confirmButtonColor: theme.palette.primary.main
-      });
+        console.error('Error completo:', error);
+        console.error('Response data:', error.response?.data);
+        console.error('Response status:', error.response?.status);
+        
+        const errorMessage = 
+            error.response?.data?.detail ||
+            error.response?.data?.error ||
+            error.message ||
+            'Error desconocido en el inicio de sesión';
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de inicio de sesión',
+            text: errorMessage,
+            confirmButtonColor: theme.palette.primary.main
+        });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
