@@ -120,17 +120,16 @@ const Reports = () => {
 
   const handlePrintReport = async () => {
     try {
-      // Obtener el token
       const token = localStorage.getItem('token');
-      
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+  
       // Usar la misma baseURL que está configurada en api.js
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://barbershop-management-production.up.railway.app'  // Debe coincidir con tu API_URL en api.js
-        : 'http://localhost:8000';
+      const baseUrl = api.defaults.baseURL.replace('/api', '');
       
       const url = `${baseUrl}/api/haircuts/report/?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
       
-      // Abrir ventana y mostrar loading
       const reportWindow = window.open('', '_blank');
       reportWindow.document.write('<h3>Cargando reporte...</h3>');
       
@@ -139,11 +138,15 @@ const Reports = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'text/html',
+          'Content-Type': 'text/html',
         },
+        mode: 'cors',
         credentials: 'include'
       });
   
       if (!response.ok) {
+        const text = await response.text();
+        console.error('Error response:', text);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
   
@@ -157,11 +160,13 @@ const Reports = () => {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo generar el reporte. Por favor intente nuevamente.'
+        text: error.message === 'No hay token de autenticación' 
+          ? 'Por favor inicie sesión nuevamente'
+          : 'No se pudo generar el reporte. Por favor intente nuevamente.'
       });
     }
   };
-  
+
   const calculateTotals = () => {
     return cuts.reduce((acc, cut) => {
       acc.total += Number(cut.amount);
