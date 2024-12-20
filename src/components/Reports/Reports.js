@@ -125,44 +125,30 @@ const Reports = () => {
         throw new Error('No hay token de autenticación');
       }
   
-      // Usar la misma baseURL que está configurada en api.js
-      const baseUrl = api.defaults.baseURL.replace('/api', '');
-      
-      const url = `${baseUrl}/api/haircuts/report/?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
-      
-      const reportWindow = window.open('', '_blank');
-      reportWindow.document.write('<h3>Cargando reporte...</h3>');
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'text/html',
-          'Content-Type': 'text/html',
+      // Hacer la solicitud usando axios (api) en lugar de fetch
+      const response = await api.get(`/haircuts/report/`, {
+        params: {
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate
         },
-        mode: 'cors',
-        credentials: 'include'
+        responseType: 'text',
+        headers: {
+          'Accept': 'text/html',
+        }
       });
   
-      if (!response.ok) {
-        const text = await response.text();
-        console.error('Error response:', text);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const html = await response.text();
-      reportWindow.document.open();
-      reportWindow.document.write(html);
+      // Crear nueva ventana y escribir el HTML
+      const reportWindow = window.open('', '_blank');
+      reportWindow.document.write(response.data);
       reportWindow.document.close();
       
     } catch (error) {
-      console.error('Error printing report:', error);
+      console.error('Error completo:', error);
+      console.error('Response:', error.response);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.message === 'No hay token de autenticación' 
-          ? 'Por favor inicie sesión nuevamente'
-          : 'No se pudo generar el reporte. Por favor intente nuevamente.'
+        text: 'No se pudo generar el reporte. Por favor intente nuevamente.'
       });
     }
   };
