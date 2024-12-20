@@ -123,40 +123,45 @@ const Reports = () => {
       // Obtener el token
       const token = localStorage.getItem('token');
       
-      // Construir la URL con los parámetros
+      // Usar la misma baseURL que está configurada en api.js
       const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://tu-app.railway.app'  // URL de producción
-        : 'http://localhost:8000';      // URL de desarrollo
+        ? 'https://barbershop-management-production.up.railway.app'  // Debe coincidir con tu API_URL en api.js
+        : 'http://localhost:8000';
       
       const url = `${baseUrl}/api/haircuts/report/?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
       
-      // Abrir en una nueva ventana
-      const reportWindow = window.open('about:blank', '_blank');
+      // Abrir ventana y mostrar loading
+      const reportWindow = window.open('', '_blank');
+      reportWindow.document.write('<h3>Cargando reporte...</h3>');
       
-      // Hacer la petición con fetch para incluir las credenciales
       const response = await fetch(url, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'text/html',
+        },
+        credentials: 'include'
       });
   
-      if (response.ok) {
-        const html = await response.text();
-        reportWindow.document.write(html);
-        reportWindow.document.close();
-      } else {
-        throw new Error('Error al cargar el reporte');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+  
+      const html = await response.text();
+      reportWindow.document.open();
+      reportWindow.document.write(html);
+      reportWindow.document.close();
+      
     } catch (error) {
       console.error('Error printing report:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo generar el reporte'
+        text: 'No se pudo generar el reporte. Por favor intente nuevamente.'
       });
     }
   };
-
+  
   const calculateTotals = () => {
     return cuts.reduce((acc, cut) => {
       acc.total += Number(cut.amount);
