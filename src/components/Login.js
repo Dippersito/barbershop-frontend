@@ -37,39 +37,56 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('Intentando login con:', formData);
-      
-      // Obtener el machine_id
+      // Obtener machine_id
       const { machineId } = getLicenseData();
-      
+      if (!machineId) {
+        console.error('No machine ID found');
+        navigate('/activate-license');
+        return;
+      }
+
+      console.log('Machine ID:', machineId);
+      console.log('Login data:', formData);
+
       const response = await api.post('/auth/login/', formData, {
         headers: {
           'X-Machine-ID': machineId
         }
       });
 
-      console.log('Respuesta del servidor:', response.data);
+      console.log('Login response:', response.data);
       
       const { access, refresh } = response.data;
+      if (!access || !refresh) {
+        throw new Error('No tokens received');
+      }
 
-      // Guardar tokens
       localStorage.setItem('token', access);
       localStorage.setItem('refreshToken', refresh);
-
-      // Configurar el token en axios
       api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
-      // Redirigir al dashboard
       navigate('/dashboard');
     } catch (error) {
-      console.error('Error completo:', error);
+      console.error('Full error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       
-      if (error.response?.status === 403) {
-        // Error de licencia
+      if (error.response?.status === 400) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de inicio de sesión',
+          text: 'Por favor, asegúrese de activar una licencia antes de iniciar sesión',
+          confirmButtonText: 'Activar Licencia',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate('/activate-license');
+          }
+        });
+      } else if (error.response?.status === 403) {
         Swal.fire({
           icon: 'error',
           title: 'Error de Licencia',
-          text: error.response.data.error,
+          text: error.response.data.error || 'Error con la licencia',
           footer: error.response.data.support_message,
           confirmButtonText: 'Activar Licencia',
         }).then((result) => {
@@ -78,11 +95,10 @@ const Login = () => {
           }
         });
       } else {
-        // Otros errores
         Swal.fire({
           icon: 'error',
           title: 'Error de inicio de sesión',
-          text: error.response?.data?.detail || 'Credenciales incorrectas',
+          text: error.response?.data?.detail || error.message || 'Error al iniciar sesión',
           confirmButtonColor: theme.palette.primary.main
         });
       }
@@ -90,7 +106,7 @@ const Login = () => {
       setLoading(false);
     }
   };
-
+  
   return (
     <Container component="main" maxWidth="xs">
       <Box
