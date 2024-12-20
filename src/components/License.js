@@ -28,13 +28,25 @@ const License = () => {
     
     if (storedLicense && machineId) {
       try {
-        await api.post('/license/activate/', {
+        const response = await api.post('/license/activate/', {
           license_key: storedLicense,
           machine_id: machineId
         });
-        navigate('/login');
+        
+        if (response.data.message === 'Licencia activada exitosamente') {
+          navigate('/login');
+        }
       } catch (error) {
-        // Si hay error, permitir nueva activación
+        // Si hay error, mostrar mensaje de soporte si existe
+        if (error.response?.data?.show_support) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de Licencia',
+            text: error.response.data.error,
+            footer: error.response.data.support_message,
+            confirmButtonText: 'Entendido'
+          });
+        }
         setLoading(false);
       }
     } else {
@@ -48,46 +60,32 @@ const License = () => {
 
     try {
       const machineId = getMachineId();
-      await api.post('/license/activate/', {
+      const response = await api.post('/license/activate/', {
         license_key: licenseKey,
         machine_id: machineId
       });
 
-      // Guardar datos de licencia
-      saveLicenseData(licenseKey);
+      if (response.data.message === 'Licencia activada exitosamente') {
+        // Guardar datos de licencia
+        saveLicenseData(licenseKey);
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Licencia Activada',
-        text: 'La licencia se ha activado correctamente',
-        showConfirmButton: true,
-      }).then(() => {
-        navigate('/login');
-      });
-    } catch (error) {
-      const errorCode = error.response?.data?.code;
-      let errorMessage = '';
-
-      switch (errorCode) {
-        case 'LICENSE_IN_USE':
-          errorMessage = 'Esta licencia ya está siendo utilizada en otra máquina';
-          break;
-        case 'ACTIVE_LICENSE_EXISTS':
-          errorMessage = `Esta barbería ya tiene una licencia válida activa que vence el ${
-            new Date(error.response.data.expires_at).toLocaleDateString()
-          }`;
-          break;
-        case 'LICENSE_NOT_FOUND':
-          errorMessage = 'La licencia ingresada no es válida';
-          break;
-        default:
-          errorMessage = 'Ocurrió un error al activar la licencia. Por favor, intente nuevamente';
+        Swal.fire({
+          icon: 'success',
+          title: 'Licencia Activada',
+          text: 'La licencia se ha activado correctamente',
+          showConfirmButton: true,
+        }).then(() => {
+          navigate('/login');
+        });
       }
-
+    } catch (error) {
+      let errorMessage = error.response?.data?.error || 'Error al activar la licencia';
+      
       Swal.fire({
         icon: 'error',
-        title: 'Error',
+        title: 'Error de Licencia',
         text: errorMessage,
+        footer: error.response?.data?.support_message,
         confirmButtonText: 'Entendido'
       });
     } finally {
