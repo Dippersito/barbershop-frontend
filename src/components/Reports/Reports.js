@@ -32,6 +32,7 @@ import moment from 'moment';
 import 'moment/locale/es';
 import api from '../../services/api';
 import Swal from 'sweetalert2';
+import { Print as PrintIcon } from '@mui/icons-material';
 
 const Reports = () => {
   const [cuts, setCuts] = useState([]);
@@ -117,37 +118,41 @@ const Reports = () => {
     }
   };
 
-  const handleDownloadPDF = async () => {
+  const handlePrintReport = async () => {
     try {
-      const response = await api.get('/haircuts/report_pdf/', {
-        responseType: 'blob',
-        params: {
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate
+      // Obtener el token
+      const token = localStorage.getItem('token');
+      
+      // Construir la URL con los parámetros
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://tu-app.railway.app'  // URL de producción
+        : 'http://localhost:8000';      // URL de desarrollo
+      
+      const url = `${baseUrl}/api/haircuts/report/?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+      
+      // Abrir en una nueva ventana
+      const reportWindow = window.open('about:blank', '_blank');
+      
+      // Hacer la petición con fetch para incluir las credenciales
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
       });
   
-      // Crear URL del blob
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      
-      // Crear enlace temporal
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `reporte_${moment().format('YYYY-MM-DD')}.pdf`);
-      
-      // Añadir al DOM, hacer clic y remover
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      // Limpiar URL
-      window.URL.revokeObjectURL(url);
+      if (response.ok) {
+        const html = await response.text();
+        reportWindow.document.write(html);
+        reportWindow.document.close();
+      } else {
+        throw new Error('Error al cargar el reporte');
+      }
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      console.error('Error printing report:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo generar el PDF'
+        text: 'No se pudo generar el reporte'
       });
     }
   };
@@ -212,10 +217,10 @@ const Reports = () => {
             <Button
               variant="contained"
               color="primary"
-              startIcon={<DownloadIcon />}
-              onClick={handleDownloadPDF}
+              startIcon={<PrintIcon />}
+              onClick={handlePrintReport}
             >
-              Descargar PDF
+              Imprimir Reporte
             </Button>
             <Button
               variant="contained"
