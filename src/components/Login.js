@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { LockOutlined } from '@mui/icons-material';
 import Swal from 'sweetalert2';
 import api from '../services/api';
+import { getMachineId, getLicenseData } from '../utils/machineId';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -106,7 +107,7 @@ const Login = () => {
       setLoading(false);
     }
   };
-  
+
   return (
     <Container component="main" maxWidth="xs">
       <Box

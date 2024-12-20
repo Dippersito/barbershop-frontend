@@ -1,6 +1,6 @@
 // src/services/api.js
 import axios from 'axios';
-import { getLicenseData } from '../utils/machineId';
+import { getLicenseData, getMachineId } from '../utils/machineId';
 
 const API_URL = process.env.NODE_ENV === 'production' 
   ? 'https://barbershop-management-production.up.railway.app/api'
