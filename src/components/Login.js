@@ -37,41 +37,50 @@ const Login = () => {
     setLoading(true);
 
     try {
-        console.log('Intentando login con:', formData); // Debug
-        const response = await api.post('/auth/login/', formData);
-        console.log('Respuesta del servidor:', response.data); // Debug
-        
-        const { access, refresh } = response.data;
+      console.log('Intentando login con:', formData);
+      const response = await api.post('/auth/login/', formData);
+      console.log('Respuesta del servidor:', response.data);
+      
+      const { access, refresh } = response.data;
 
-        if (access && refresh) {
-            localStorage.setItem('token', access);
-            localStorage.setItem('refreshToken', refresh);
-            api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
-            navigate('/dashboard');
-        } else {
-            throw new Error('No se recibieron los tokens necesarios');
-        }
+      // Guardar tokens
+      localStorage.setItem('token', access);
+      localStorage.setItem('refreshToken', refresh);
+
+      // Configurar el token en axios
+      api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+
+      // Redirigir al dashboard
+      navigate('/dashboard');
     } catch (error) {
-        console.error('Error completo:', error);
-        console.error('Response data:', error.response?.data);
-        console.error('Response status:', error.response?.status);
-        
-        const errorMessage = 
-            error.response?.data?.detail ||
-            error.response?.data?.error ||
-            error.message ||
-            'Error desconocido en el inicio de sesión';
-
+      console.error('Error de inicio de sesión:', error);
+      
+      if (error.response?.status === 403) {
+        // Error de licencia
         Swal.fire({
-            icon: 'error',
-            title: 'Error de inicio de sesión',
-            text: errorMessage,
-            confirmButtonColor: theme.palette.primary.main
+          icon: 'error',
+          title: 'Error de Licencia',
+          text: error.response.data.error,
+          footer: error.response.data.support_message,
+          confirmButtonText: 'Activar Licencia',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate('/activate-license');
+          }
         });
+      } else {
+        // Otros errores
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de inicio de sesión',
+          text: error.response?.data?.detail || 'Credenciales incorrectas',
+          confirmButtonColor: theme.palette.primary.main
+        });
+      }
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-  };
+};
 
   return (
     <Container component="main" maxWidth="xs">
